@@ -1,10 +1,40 @@
+import 'package:eniot_dash/io_list.dart';
+import 'package:eniot_dash/mqtt.dart';
+import 'package:eniot_dash/server.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(MainApp());
+Servers servers = new Servers();
 
-class MainApp extends StatelessWidget {
-  // This widget is the root of your application.
-  final title = "enIOT Dash";
+class MainApp extends StatefulWidget {
+  MainApp() {
+    () async {
+      servers.add(
+          "default",
+          new ServerInfo(
+              clientId: "test-app",
+              server: "m15.cloudmqtt.com",
+              port: 11942,
+              username: "avpibbsx",
+              password: "W5JpLz3234kz"));
+    }();
+  }
+
+  @override
+  MainAppState createState() => new MainAppState();
+}
+
+class MainAppState extends State<MainApp> {
+  IOList ioList = IOList(new Mqtt(servers.fetch("default")));
+
+  final title = "eniot dashboard";
+
+  MainAppState() {
+    ioList.onChange = () {
+      setState(() {});
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -13,26 +43,13 @@ class MainApp extends StatelessWidget {
         appBar: AppBar(
           title: Text(title),
         ),
-        body: GridView.count(
-          // Create a grid with 2 columns. If you change the scrollDirection to
-          // horizontal, this would produce 2 rows.
-          crossAxisCount: 1,
-          // Generate 100 Widgets that display their index in the List
-          children: List.generate(100, (index) {            
-              return Card(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    const ListTile(                      
-                      title: Text('The Enchanted Nightingale'),
-                      subtitle:
-                          Text('Music by Julie Gable. Lyrics by Sidney Stein.'),
-                    ),
-                  ],
-                ),
-              );
-          }),
-        ),
+        body: OrientationBuilder(builder: (context, orientation) {
+          return GridView.count(
+            crossAxisCount: orientation == Orientation.portrait ? 2 : 3,
+            childAspectRatio: orientation == Orientation.portrait ? 2 : 2.5,
+            children: ioList.widgets(),
+          );
+        }),
       ),
     );
   }

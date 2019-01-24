@@ -9,6 +9,19 @@ class ServerInfo {
   String username;
   String password;
 
+  ServerInfo(
+      {String clientId,
+      String server,
+      int port,
+      String username,
+      String password}) {
+    this.clientId = clientId;
+    this.server = server;
+    this.port = port;
+    this.username = username;
+    this.password = password;
+  }
+
   ServerInfo.fromJson(Map<String, dynamic> json)
       : server = json["server"],
         clientId = json["client_id"],
@@ -29,22 +42,26 @@ class ServerInfo {
 class Servers {
   final prefKey = "mqtt_servers";
   final servers = new Map<String, ServerInfo>();
-  final SharedPreferences prefs;
+  SharedPreferences prefs;
+  Servers() {
+    () async {
+      prefs = await SharedPreferences.getInstance();
+    }();
+  }
 
-  Servers(this.prefs);
-
-  factory Servers.fromJson(SharedPreferences prefs, Map<String, dynamic> json) {
-    Servers instances = Servers(prefs);
+  factory Servers.fromJson(Map<String, dynamic> json) {
+    Servers instances = new Servers();
     json.forEach((name, server) {
       instances.add(name, ServerInfo.fromJson(server));
     });
     return instances;
   }
 
-  Map<String, dynamic> toJson() => servers;  
+  Map<String, dynamic> toJson() => servers;
 
   void add(String name, ServerInfo server) => servers[name] = server;
-  ServerInfo fetch(String name) => servers[name];
+  ServerInfo fetch(String name) =>
+      servers.containsKey(name) ? servers[name] : null;
   void delete(String name) => servers.remove(name);
   void save() => prefs.setString(prefKey, jsonEncode(servers));
 }
