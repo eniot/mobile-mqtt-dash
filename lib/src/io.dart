@@ -48,8 +48,8 @@ class IO {
   bool isOn() => _value == HIGH;
   void setOnOff(bool val) => val ? setValue(HIGH) : setValue(LOW);
   void setValue(int val) {
-    _value = val;
-    mqtt.publish(outTopic, "set:" + _value.toString());
+    //_value = val;
+    mqtt.publish(outTopic, "set:" + val.toString());
   }
 
   Map<String, dynamic> toJson() => {

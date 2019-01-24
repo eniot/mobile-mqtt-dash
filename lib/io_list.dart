@@ -43,13 +43,8 @@ class _IOListState extends State<IOList> {
 
   String _key(String device, String io) => device + "_" + io;
 
-  List<IOCard> widgets() =>
+  List<IOCard> _widgets() =>
       data.values.map((io) => new IOCard(io: io)).toList();
-
-  Future<void> refresh() async {
-    mqtt.findIO();
-    return Future.delayed(Duration(seconds: 2), () => {});
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,10 +53,13 @@ class _IOListState extends State<IOList> {
         return GridView.count(
           crossAxisCount: orientation == Orientation.portrait ? 2 : 3,
           childAspectRatio: orientation == Orientation.portrait ? 2 : 2.5,
-          children: widgets(),
+          children: _widgets(),
         );
       }),
-      onRefresh: refresh,
+      onRefresh: () async {
+        mqtt.findIO();
+        return Future.delayed(Duration(seconds: 1), () {});
+      },
     );
   }
 }
