@@ -1,6 +1,6 @@
 import 'package:eniot_dash/io_list.dart';
-import 'package:eniot_dash/mqtt.dart';
-import 'package:eniot_dash/server.dart';
+import 'package:eniot_dash/src/server.dart';
+import 'package:eniot_dash/src/mqtt.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(MainApp());
@@ -25,16 +25,8 @@ class MainApp extends StatefulWidget {
 }
 
 class MainAppState extends State<MainApp> {
-  IOList ioList = IOList(new Mqtt(servers.fetch("default")));
-
+  final mqtt = new Mqtt(servers.fetch("default"));
   final title = "eniot dashboard";
-
-  MainAppState() {
-    ioList.onChange = () {
-      setState(() {});
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -43,13 +35,7 @@ class MainAppState extends State<MainApp> {
         appBar: AppBar(
           title: Text(title),
         ),
-        body: OrientationBuilder(builder: (context, orientation) {
-          return GridView.count(
-            crossAxisCount: orientation == Orientation.portrait ? 2 : 3,
-            childAspectRatio: orientation == Orientation.portrait ? 2 : 2.5,
-            children: ioList.widgets(),
-          );
-        }),
+        body: new IOList(mqtt: mqtt),
       ),
     );
   }

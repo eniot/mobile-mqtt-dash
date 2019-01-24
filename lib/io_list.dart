@@ -1,32 +1,67 @@
-import 'package:eniot_dash/io.dart';
-import 'package:eniot_dash/mqtt.dart';
+import 'package:eniot_dash/io_card.dart';
+import 'package:eniot_dash/src/io.dart';
+import 'package:eniot_dash/src/mqtt.dart';
+import 'package:flutter/material.dart';
 
-typedef IOListChangeCallback = void Function();
+class IOList extends StatefulWidget {
+  final Mqtt mqtt;
 
-class IOList {
+  const IOList({Key key, this.mqtt}) : super(key: key);
+  @override
+  State<StatefulWidget> createState() => new _IOListState(mqtt);
+}
+
+class _IOListState extends State<IOList> {
   final data = Map<String, IO>();
   final Mqtt mqtt;
 
-  IOListChangeCallback onChange;
-
-  IOList(this.mqtt) {
-    mqtt.onFindIO = (IO io) {
+  _IOListState(this.mqtt) {
+    mqtt.onFindIO = (topicParts, ioJson) {
+      IO io = IO(mqtt,
+          device: topicParts[1],
+          io: ioJson["io"],
+          mode: ioJson["mode"],
+          value: ioJson["val"] ?? IO.LOW);
       add(io);
     };
   }
 
   void add(IO io) {
-    if (data.containsKey(io.io)) return;
-    data[io.io] = io;
-    if (onChange != null) onChange();
+    setState(() {
+      final key = _key(io.device, io.io);
+      data[key] = io;
+    });
   }
 
-  void remove(String io) {
-    if (!data.containsKey(io)) return;
-    data.remove(io);
-    if (onChange != null) onChange();
+  void remove(String device, String io) {
+    setState(() {
+      final key = _key(device, io);
+      if (!data.containsKey(key)) return;
+      data.remove(key);
+    });
   }
+
+  String _key(String device, String io) => device + "_" + io;
 
   List<IOCard> widgets() =>
       data.values.map((io) => new IOCard(io: io)).toList();
+
+  Future<void> refresh() async {
+    mqtt.findIO();
+    return Future.delayed(Duration(seconds: 2), () => {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new RefreshIndicator(
+      child: OrientationBuilder(builder: (context, orientation) {
+        return GridView.count(
+          crossAxisCount: orientation == Orientation.portrait ? 2 : 3,
+          childAspectRatio: orientation == Orientation.portrait ? 2 : 2.5,
+          children: widgets(),
+        );
+      }),
+      onRefresh: refresh,
+    );
+  }
 }
