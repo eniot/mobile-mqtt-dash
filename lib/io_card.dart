@@ -22,27 +22,39 @@ class _IOCardState extends State<IOCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (_working) {
-      return Card(
-        child: Center(
-          child: Text("Woring..."),
-        ),
-      );
-    }
     return Card(
       child: Center(
-        child: SwitchListTile(
+        child: ListTile(
           title: Text(io.device),
           subtitle: Text(io.io),
-          value: io.isOn(),
-          onChanged: (bool switchValue) {
-            setState(() {
-              io.setOnOff(switchValue);
-              _working = true;
-            });
-          },
+          trailing: _trailView(),
         ),
       ),
+    );
+  }
+
+  Widget _trailView() => (io.readOnly()
+      ? _valueView()
+      : _working ? _workingView() : _swicthView());
+
+  Widget _workingView() => const Padding(
+        padding: EdgeInsets.all(10.0),
+        child: CircularProgressIndicator(),
+      );
+
+  Widget _valueView() => io.isOn()
+      ? Icon(Icons.check_box, color: Colors.blue, size: 30)
+      : Icon(Icons.check_box_outline_blank, size: 30);
+
+  Widget _swicthView() {
+    return Switch(
+      value: io.isOn(),
+      onChanged: (val) {
+        setState(() {
+          _working = true;
+          io.setOnOff(val);
+        });
+      },
     );
   }
 }

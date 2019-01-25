@@ -46,6 +46,7 @@ class IO {
   }
 
   bool isOn() => _value == HIGH;
+  bool readOnly() => mode == READ_ONLY;
   void setOnOff(bool val) => val ? setValue(HIGH) : setValue(LOW);
   void setValue(int val) {
     //_value = val;
