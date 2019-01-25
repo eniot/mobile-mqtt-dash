@@ -38,23 +38,35 @@ class ServerInfo {
       };
 }
 
+typedef ServersEmptyCallback = void Function();
+typedef ServersChangeCallback = void Function(String, ServerInfo);
+
 // MQTT Server configuration set
 class Servers {
   final prefKey = "mqtt_servers";
   final servers = new Map<String, ServerInfo>();
+  String selected;
+  final ServersEmptyCallback onEmpty;
+  final ServersChangeCallback onChange;
+
   SharedPreferences prefs;
-  Servers() {
+  Servers({this.onEmpty, this.onChange}) {
     () async {
       prefs = await SharedPreferences.getInstance();
+      if (prefs == null) {
+        onEmpty();
+      } else {
+        final Map json = jsonDecode(prefs.getString(prefKey));
+        loadFromJson(json);
+      }
     }();
   }
 
-  factory Servers.fromJson(Map<String, dynamic> json) {
-    Servers instances = new Servers();
+  void loadFromJson(Map<String, dynamic> json) {
     json.forEach((name, server) {
-      instances.add(name, ServerInfo.fromJson(server));
+      add(name, ServerInfo.fromJson(server));
     });
-    return instances;
+    if (servers.isEmpty) onEmpty();
   }
 
   Map<String, dynamic> toJson() => servers;
@@ -64,4 +76,12 @@ class Servers {
       servers.containsKey(name) ? servers[name] : null;
   void delete(String name) => servers.remove(name);
   void save() => prefs.setString(prefKey, jsonEncode(servers));
+
+  void select(String name) {
+    var info = fetch(name);
+    if (info != null) {
+      selected = name;
+      if (onChange != null) onChange(name, info);
+    }
+  }
 }

@@ -43,8 +43,8 @@ class _IOCardState extends State<IOCard> {
       );
 
   Widget _valueView() => io.isOn()
-      ? Icon(Icons.check_box, color: Colors.blue, size: 30)
-      : Icon(Icons.check_box_outline_blank, size: 30);
+      ? Icon(Icons.blur_circular, color: Colors.blue, size: 30)
+      : Icon(Icons.blur_circular, size: 30);
 
   Widget _swicthView() {
     return Switch(
