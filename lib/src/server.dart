@@ -53,12 +53,11 @@ class Servers {
   Servers({this.onEmpty, this.onChange}) {
     () async {
       prefs = await SharedPreferences.getInstance();
-      if (prefs == null) {
-        onEmpty();
-      } else {
-        final Map json = jsonDecode(prefs.getString(prefKey));
-        loadFromJson(json);
-      }
+      if (prefs == null) return onEmpty();
+      final scontent = prefs.getString(prefKey);
+      if (scontent == null) return onEmpty();
+      final Map json = jsonDecode(scontent);
+      loadFromJson(json);
     }();
   }
 

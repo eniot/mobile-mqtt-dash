@@ -1,4 +1,5 @@
 import 'package:eniot_dash/io_list.dart';
+import 'package:eniot_dash/server_form.dart';
 import 'package:eniot_dash/server_list.dart';
 import 'package:eniot_dash/src/server.dart';
 import 'package:eniot_dash/src/mqtt.dart';
@@ -19,16 +20,14 @@ class MainAppState extends State<MainApp> {
 
   MainAppState() {
     _serverList = new ServerList(
-      servers: new Servers(
-          onChange: (name, currInfo) {
-            setState(() {
-              currServerInfo = currInfo;
-              mqtt = new Mqtt(currServerInfo);
-            });
-          },
-          onEmpty: () {
-            _newServerForm();
-          }),
+      servers: new Servers(onChange: (name, currInfo) {
+        setState(() {
+          currServerInfo = currInfo;
+          mqtt = new Mqtt(currServerInfo);
+        });
+      }, onEmpty: () {
+        _newServerForm();
+      }),
     );
   }
 
@@ -47,7 +46,7 @@ class MainAppState extends State<MainApp> {
           ),
         ],
       ),
-      body: mqtt == null? new Text("Loading..."): new IOList(mqtt: mqtt),
+      body: mqtt == null ? new Text("Loading...") : new IOList(mqtt: mqtt),
     );
   }
 
@@ -59,7 +58,10 @@ class MainAppState extends State<MainApp> {
         });
   }
 
-  void _newServerForm(){
-    //TODO
+  void _newServerForm() {
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => ServerForm()),
+        ModalRoute.withName('/'));
   }
 }
