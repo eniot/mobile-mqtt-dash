@@ -3,7 +3,8 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'dart:convert';
 
 typedef FindIOCallback = void Function(List<String>, dynamic);
-typedef IOListenSubscribe = void Function(String value);
+typedef IOListenSubscribe = void Function(String);
+typedef MqttConnectionCallback = void Function(bool, Mqtt);
 
 class Mqtt {
   MqttClient client;
@@ -12,15 +13,17 @@ class Mqtt {
 
   final customSubscriptions = Map<String, List<IOListenSubscribe>>();
   final ServerInfo info;
+  final MqttConnectionCallback afterConnection;
 
-  Mqtt(this.info) {
-    this.client =
-        MqttClient.withPort(info.server, info.clientId, info.port ?? 1883);
+  Mqtt(this.info, {this.afterConnection}) {
+    this.client = MqttClient.withPort(
+        info.server, info.clientId, info.port ?? Constants.defaultMqttPort);
     client.onDisconnected = () {
       connected = false;
       client.connect(info.username, info.password);
     };
     client.onConnected = () {
+      if (afterConnection != null) return afterConnection(true, this);
       connected = true;
       client.subscribe('res/#', MqttQos.atLeastOnce);
       client.subscribe('err/#', MqttQos.atLeastOnce);
@@ -34,7 +37,14 @@ class Mqtt {
       });
       findIO();
     };
-    client.connect(info.username, info.password);
+  }
+
+  Future<bool> connect() {
+    return client.connect(info.username, info.password).then((status) {
+      if (afterConnection != null)
+        afterConnection(status.state == MqttConnectionState.connected, this);
+      return status.state == MqttConnectionState.connected;
+    });
   }
 
   void _handleMessage(String topic, String payload) {
@@ -71,7 +81,6 @@ class Mqtt {
     client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload);
   }
 
-  void findIO() {
-    publish("cmd/*/io", "get");
-  }
+  void findIO() => publish("cmd/*/io", "get");
+  void disconnect() => client.disconnect();
 }

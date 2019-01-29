@@ -21,6 +21,7 @@ dependencies:
   cupertino_icons: ^0.1.2
   shared_preferences: ^0.4.3
   mqtt_client: ^5.3.0
+  random_string: ^0.0.2
   
 dev_dependencies:
   flutter_test:

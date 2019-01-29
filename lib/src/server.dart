@@ -66,6 +66,7 @@ class Servers {
       add(name, ServerInfo.fromJson(server));
     });
     if (servers.isEmpty) onEmpty();
+    else select(servers.keys.first);    
   }
 
   Map<String, dynamic> toJson() => servers;

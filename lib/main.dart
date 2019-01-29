@@ -17,23 +17,30 @@ class MainApp extends StatefulWidget {
 class MainAppState extends State<MainApp> {
   Mqtt mqtt;
   ServerList _serverList;
+  Servers _servers;
 
   MainAppState() {
-    _serverList = new ServerList(
-      servers: new Servers(onChange: (name, currInfo) {
-        setState(() {
-          currServerInfo = currInfo;
-          mqtt = new Mqtt(currServerInfo);
-        });
-      }, onEmpty: () {
-        _newServerForm();
-      }),
-    );
+    _servers = new Servers(onChange: (name, currInfo) {
+      setState(() {        
+        currServerInfo = currInfo;
+        if(mqtt != null) mqtt.disconnect();
+        mqtt = new Mqtt(currServerInfo);
+      });
+    }, onEmpty: () {
+      _newServerForm();
+    });
+    _serverList = new ServerList(servers: _servers);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    mqtt.connect();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return new Scaffold(
       appBar: AppBar(
         title: Text(title),
         actions: <Widget>[
@@ -59,9 +66,14 @@ class MainAppState extends State<MainApp> {
   }
 
   void _newServerForm() {
-    Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => ServerForm()),
-        ModalRoute.withName('/'));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ServerForm((name, sInfo) {
+              _servers.add(name, sInfo);
+              _servers.select(name);
+              _servers.save();
+            }),
+      ),
+    );
   }
 }
