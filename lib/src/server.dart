@@ -74,7 +74,10 @@ class Servers {
   void add(String name, ServerInfo server) => servers[name] = server;
   ServerInfo fetch(String name) =>
       servers.containsKey(name) ? servers[name] : null;
-  void delete(String name) => servers.remove(name);
+  void delete(String name) { 
+    servers.remove(name);
+    if(servers.isEmpty) onEmpty();
+  }
   void save() => prefs.setString(prefKey, jsonEncode(servers));
 
   void select(String name) {

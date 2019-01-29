@@ -27,6 +27,34 @@ class _ServerListState extends State<ServerList> {
                 onTap: () {
                   servers.select(name);
                 },
+                onLongPress: () {
+                  showDialog(
+                    context: context,
+                    builder: (alertContext) => AlertDialog(
+                          title: new Text("Removing " + name),
+                          content: new Text("Are you sure?"),
+                          actions: <Widget>[
+                            new FlatButton(
+                              textColor: Colors.grey,
+                              child: new Text("Yes"),
+                              onPressed: () {
+                                Navigator.of(alertContext).pop();
+                                setState(() {
+                                  servers.delete(name);
+                                  servers.save();                                  
+                                });
+                              },
+                            ),
+                            new FlatButton(
+                              child: new Text("No"),
+                              onPressed: () {
+                                Navigator.of(alertContext).pop();
+                              },
+                            ),
+                          ],
+                        ),
+                  );
+                },
               ));
         })
         .values

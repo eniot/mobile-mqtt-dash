@@ -35,7 +35,7 @@ class MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
-    mqtt.connect();
+    if(mqtt != null) mqtt.connect();
   }
 
   @override
