@@ -8,16 +8,18 @@ typedef ServerFormSubmitCallback = void Function(String, ServerInfo);
 class ServerForm extends StatefulWidget {
   final ServerInfo info;
   final ServerFormSubmitCallback onSubmit;
+  final bool popable;
 
-  const ServerForm(this.onSubmit, {Key key, this.info}) : super(key: key);
+  const ServerForm(this.onSubmit, {Key key, this.info, this.popable = true}) : super(key: key);
   @override
   State<StatefulWidget> createState() =>
-      _ServerFormState(info ?? new ServerInfo(), onSubmit);
+      _ServerFormState(info ?? new ServerInfo(), onSubmit, popable);
 }
 
 class _ServerFormState extends State {
   final ServerInfo info;
   final ServerFormSubmitCallback onSubmit;
+  final bool popable;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _serverController = TextEditingController();
@@ -25,7 +27,7 @@ class _ServerFormState extends State {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  _ServerFormState(this.info, this.onSubmit);
+  _ServerFormState(this.info, this.onSubmit, this.popable);
 
   @override
   void dispose() {
@@ -46,7 +48,7 @@ class _ServerFormState extends State {
           child: Builder(
             builder: (preferredSizeContext) => AppBar(
                   title: Text("MQTT Server"),
-                  automaticallyImplyLeading: false,
+                  automaticallyImplyLeading: popable,
                   actions: <Widget>[
                     IconButton(
                       icon: Icon(Icons.save),
@@ -128,7 +130,7 @@ class _ServerFormState extends State {
         ),
       ),
       onWillPop: () {
-        return new Future(() => false);
+        return new Future(() => popable);
       },
     );
   }

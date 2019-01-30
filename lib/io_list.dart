@@ -57,6 +57,7 @@ class _IOListState extends State<IOList> {
         );
       }),
       onRefresh: () async {
+        data.clear();
         mqtt.findIO();
         return Future.delayed(Duration(seconds: 1), () {});
       },

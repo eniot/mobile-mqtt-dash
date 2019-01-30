@@ -83,8 +83,10 @@ class Servers {
   void select(String name) {
     var info = fetch(name);
     if (info != null) {
-      selected = name;
-      if (onChange != null) onChange(name, info);
+      try {
+        if (onChange != null) onChange(name, info);
+        selected = name;
+      } catch (_) {}
     }
   }
 }

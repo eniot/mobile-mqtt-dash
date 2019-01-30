@@ -8,7 +8,8 @@ typedef MqttConnectionCallback = void Function(bool, Mqtt);
 
 class Mqtt {
   MqttClient client;
-  bool connected;
+  bool connected() =>
+      client.connectionStatus.state == MqttConnectionState.connected;
   FindIOCallback onFindIO;
 
   final customSubscriptions = Map<String, List<IOListenSubscribe>>();
@@ -19,12 +20,10 @@ class Mqtt {
     this.client = MqttClient.withPort(
         info.server, info.clientId, info.port ?? Constants.defaultMqttPort);
     client.onDisconnected = () {
-      connected = false;
       client.connect(info.username, info.password);
     };
     client.onConnected = () {
       if (afterConnection != null) return afterConnection(true, this);
-      connected = true;
       client.subscribe('res/#', MqttQos.atLeastOnce);
       client.subscribe('err/#', MqttQos.atLeastOnce);
       client.updates.listen((List<MqttReceivedMessage<MqttMessage>> c) {
@@ -35,16 +34,19 @@ class Mqtt {
           _handleMessage(c[i].topic, payload);
         }
       });
-      findIO();
     };
   }
 
-  Future<bool> connect() {
-    return client.connect(info.username, info.password).then((status) {
-      if (afterConnection != null)
-        afterConnection(status.state == MqttConnectionState.connected, this);
-      return status.state == MqttConnectionState.connected;
-    });
+  Future<bool> connect() async {
+    try {
+      return await client.connect(info.username, info.password).then((status) {
+        if (afterConnection != null)
+          afterConnection(status.state == MqttConnectionState.connected, this);
+        return status.state == MqttConnectionState.connected;
+      });
+    } catch (_) {
+      return false;
+    }
   }
 
   void _handleMessage(String topic, String payload) {
@@ -75,12 +77,16 @@ class Mqtt {
     }
   }
 
-  void publish(String topic, String payload) {
-    final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
-    builder.addString(payload);
-    client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload);
+  void publish(String topic, String payload) async {    
+    if(connected() || await connect()) {
+      final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
+      builder.addString(payload);
+      client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload);
+    }
   }
 
   void findIO() => publish("cmd/*/io", "get");
-  void disconnect() => client.disconnect();
+  void disconnect() {
+    if (client != null && connected()) client.disconnect();
+  }
 }

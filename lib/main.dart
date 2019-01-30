@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 
 final title = "eniot dashboard";
 void main() => runApp(new MaterialApp(home: MainApp(), title: title));
-ServerInfo currServerInfo;
 
 class MainApp extends StatefulWidget {
   @override
@@ -16,26 +15,24 @@ class MainApp extends StatefulWidget {
 
 class MainAppState extends State<MainApp> {
   Mqtt mqtt;
-  ServerList _serverList;
   Servers _servers;
+  ServerList _serverList;
 
   MainAppState() {
-    _servers = new Servers(onChange: (name, currInfo) {
-      setState(() {        
-        currServerInfo = currInfo;
-        if(mqtt != null) mqtt.disconnect();
-        mqtt = new Mqtt(currServerInfo);
-      });
-    }, onEmpty: () {
-      _newServerForm();
-    });
-    _serverList = new ServerList(servers: _servers);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    if(mqtt != null) mqtt.connect();
+    _servers = new Servers(
+      onChange: (name, currInfo) {
+        setState(() {
+          if (mqtt != null) mqtt.disconnect();
+          mqtt = new Mqtt(currInfo);
+          mqtt.findIO();
+        });
+      },
+      onEmpty: () => _newServerForm(false),
+    );
+    _serverList = new ServerList(
+      servers: _servers,
+      onAdd: () => _newServerForm(true),
+    );
   }
 
   @override
@@ -65,14 +62,17 @@ class MainAppState extends State<MainApp> {
         });
   }
 
-  void _newServerForm() {
+  void _newServerForm(bool popable) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ServerForm((name, sInfo) {
-              _servers.add(name, sInfo);
-              _servers.select(name);
-              _servers.save();
-            }),
+        builder: (context) => ServerForm(
+              (name, sInfo) {
+                _servers.add(name, sInfo);
+                _servers.select(name);
+                _servers.save();
+              },
+              popable: popable,
+            ),
       ),
     );
   }
