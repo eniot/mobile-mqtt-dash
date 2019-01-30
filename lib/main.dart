@@ -2,7 +2,6 @@ import 'package:eniot_dash/io_list.dart';
 import 'package:eniot_dash/server_form.dart';
 import 'package:eniot_dash/server_list.dart';
 import 'package:eniot_dash/src/server.dart';
-import 'package:eniot_dash/src/mqtt.dart';
 import 'package:flutter/material.dart';
 
 final title = "eniot dashboard";
@@ -14,17 +13,20 @@ class MainApp extends StatefulWidget {
 }
 
 class MainAppState extends State<MainApp> {
-  Mqtt mqtt;
   Servers _servers;
   ServerList _serverList;
+  IOListState _ioListState;
+  String _serverName;
 
   MainAppState() {
     _servers = new Servers(
       onChange: (name, currInfo) {
         setState(() {
-          if (mqtt != null) mqtt.disconnect();
-          mqtt = new Mqtt(currInfo);
-          mqtt.findIO();
+          if (_ioListState == null)
+            _ioListState = new IOListState(currInfo);
+          else
+            _ioListState.updateServerInfo(currInfo);
+          _serverName = name;
         });
       },
       onEmpty: () => _newServerForm(false),
@@ -39,7 +41,7 @@ class MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return new Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(_serverName ?? title),
         actions: <Widget>[
           // action button
           IconButton(
@@ -50,7 +52,9 @@ class MainAppState extends State<MainApp> {
           ),
         ],
       ),
-      body: mqtt == null ? new Text("Loading...") : new IOList(mqtt: mqtt),
+      body: _ioListState == null
+          ? new Text("Loading...")
+          : new IOList(state: _ioListState),
     );
   }
 

@@ -10,7 +10,8 @@ class ServerForm extends StatefulWidget {
   final ServerFormSubmitCallback onSubmit;
   final bool popable;
 
-  const ServerForm(this.onSubmit, {Key key, this.info, this.popable = true}) : super(key: key);
+  const ServerForm(this.onSubmit, {Key key, this.info, this.popable = true})
+      : super(key: key);
   @override
   State<StatefulWidget> createState() =>
       _ServerFormState(info ?? new ServerInfo(), onSubmit, popable);
@@ -72,7 +73,8 @@ class _ServerFormState extends State {
                         TextFormField(
                           controller: _nameController,
                           decoration: InputDecoration(
-                              labelText: "Connection Name", hintText: "My Home MQTT"),
+                              labelText: "Connection Name",
+                              hintText: "Home MQTT"),
                           validator: (value) {
                             if (value.isEmpty) {
                               return 'Please enter a connection name';
@@ -185,7 +187,7 @@ class _ServerFormState extends State {
   }
 
   void _submit(BuildContext childContext, ServerInfo sInfo) {
-    if(onSubmit != null) onSubmit(_nameController.text.trim(), sInfo);
+    if (onSubmit != null) onSubmit(_nameController.text.trim(), sInfo);
     Navigator.of(context).pop();
   }
 }
