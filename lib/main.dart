@@ -1,4 +1,3 @@
-import 'package:eniot_dash/dialogs.dart';
 import 'package:eniot_dash/io_card.dart';
 import 'package:eniot_dash/server_form.dart';
 import 'package:eniot_dash/server_list.dart';
@@ -32,10 +31,10 @@ class MainAppState extends State<MainApp> {
         if (_mqtt != null) _mqtt.disconnect();
         _mqtt = new Mqtt(currInfo, onFindIO: (topicParts, json, mqtt) {
           setState(() {
-            final io = IO.fromMqttResponse(mqtt, topicParts, json);
+            final io = new IO.fromMqttResponse(mqtt, topicParts, json);
             _ioMap[io.key()] = io;
           });
-        }, onError: (msg, _) {
+        }, onStateChange: () {
           setState(() {});
         });
         _mqtt.verifyConnection();
@@ -101,25 +100,38 @@ class MainAppState extends State<MainApp> {
 
   Widget _ioList(BuildContext context) {
     if (_mqtt == null) {
-      return new Center(child: Text("Please select a connection"));
+      return _ioListMessage("Please select a connection");
     }
-    if (_mqtt.connected()) {
-      return new RefreshIndicator(
-        child: OrientationBuilder(builder: (context, orientation) {
+    return new RefreshIndicator(
+      child: OrientationBuilder(builder: (context, orientation) {
+        if (_ioMap.isEmpty) {
+          if (!_mqtt.connected()) return _ioListMessage(_mqtt.statusMessage());
+          return _ioListMessage(
+              "No devices found.\n\n After connecting your enIOT devices, pull down the list to reload, or add them manually.");
+        } else {
           return GridView.count(
             crossAxisCount: orientation == Orientation.portrait ? 2 : 3,
             childAspectRatio: orientation == Orientation.portrait ? 2 : 2.5,
             children: _ioMap.values.map((io) => new IOCard(io: io)).toList(),
           );
-        }),
-        onRefresh: () async {
-          _ioMap.clear();
-          _mqtt.findIO();
-          return Future.delayed(Duration(seconds: 1), () {});
-        },
-      );
-    } else {
-      return new Center(child: Text(_mqtt.statusMessage()));
-    }
+        }
+      }),
+      onRefresh: () async {
+        _ioMap.clear();
+        _mqtt.findIO();
+        return Future.delayed(Duration(seconds: 1), () {});
+      },
+    );
+  }
+
+  Widget _ioListMessage(String msg) {
+    return GridView.count(crossAxisCount: 1, children: [
+      Center(
+          child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Text(msg,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey))))
+    ]);
   }
 }

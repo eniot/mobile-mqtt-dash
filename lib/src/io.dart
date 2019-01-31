@@ -48,10 +48,11 @@ class IO {
   bool isOn() => _value == HIGH;
   bool readOnly() => mode == READ_ONLY;
   void setOnOff(bool val) => val ? setValue(HIGH) : setValue(LOW);
-  void setValue(int val) {    
+  void setValue(int val) {
     mqtt.publish(outTopic, "set:" + val.toString());
   }
-  String key() => device + "_" + io;
+
+  String key() => this.device + "_" + this.io;
 
   Map<String, dynamic> toJson() => {
         'io': io,
@@ -62,11 +63,10 @@ class IO {
         'out_topic': outTopic
       };
 
-  IO.fromMqttResponse(this.mqtt, List<String> topicParts, ioJson) {
-    IO(this.mqtt,
-          device: topicParts[1],
-          io: ioJson["io"],
-          mode: ioJson["mode"],
-          value: ioJson["val"] ?? IO.LOW);
-  }
+  IO.fromMqttResponse(Mqtt mqtt, List<String> topicParts, ioJson)
+      : this(mqtt,
+            device: topicParts[1],
+            io: ioJson["io"],
+            mode: ioJson["mode"],
+            value: ioJson["val"] ?? IO.LOW);
 }

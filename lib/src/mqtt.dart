@@ -4,7 +4,7 @@ import 'dart:convert';
 
 typedef FindIOCallback = void Function(List<String>, dynamic, Mqtt);
 typedef IOListenSubscribe = void Function(String);
-typedef MqttErrorCallback = void Function(String, Mqtt);
+typedef MqttStateChangeCallback = void Function();
 
 class Mqtt {
   MqttClient client;
@@ -18,14 +18,16 @@ class Mqtt {
   final ServerInfo info;
 
   // Events
-  final MqttErrorCallback onError;
+  final MqttStateChangeCallback onStateChange;
   final FindIOCallback onFindIO;
+  String error;
 
-  Mqtt(this.info, {this.onError, this.onFindIO}) {
+  Mqtt(this.info, {this.onStateChange, this.onFindIO}) {
     this.client = MqttClient.withPort(
         info.server, info.clientId, info.port ?? Constants.defaultMqttPort);
     client.onDisconnected = () {
-      client.connect(info.username, info.password);
+      if (onStateChange != null) onStateChange();
+      //client.connect(info.username, info.password);
     };
     client.onConnected = () {
       client.subscribe('res/#', MqttQos.atLeastOnce);
@@ -38,6 +40,7 @@ class Mqtt {
           _handleMessage(c[i].topic, payload);
         }
       });
+      findIO();
     };
   }
 
@@ -66,10 +69,11 @@ class Mqtt {
   Future<bool> connect() async {
     try {
       return await client.connect(info.username, info.password).then((status) {
+        if (onStateChange != null) onStateChange();
         return connected();
       });
-    } catch (e) {
-      if (onError != null) onError(e.toString(), this);
+    } catch (_) {
+      if (onStateChange != null) onStateChange();
       return false;
     }
   }
@@ -95,10 +99,15 @@ class Mqtt {
   }
 
   // Find IOs
-  void findIO() => publish("cmd/*/io", "get");
+  void findIO() {
+    if (onStateChange != null) onStateChange();
+    publish("cmd/*/io", "get");
+  }
+
   // Disconnect client
   void disconnect() {
     if (client != null && connected()) client.disconnect();
+    if (onStateChange != null) onStateChange();
   }
 
   // Get Status message
@@ -107,13 +116,13 @@ class Mqtt {
       case MqttConnectionState.connected:
         return "Connected";
       case MqttConnectionState.connecting:
-        return "Connecting...";
+        return "Trying to connect...";
       case MqttConnectionState.disconnecting:
         return "Disconnecting...";
       case MqttConnectionState.faulted:
-        return "Error in connection";
+        return "Connection failed.\n\nCheck your server configuration, and make sure you are connected to the network.";
       default:
-        return "Not connected";
+        return "Not connected.";
     }
   }
 }
