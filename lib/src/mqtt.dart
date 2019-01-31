@@ -8,15 +8,18 @@ typedef MqttErrorCallback = void Function(String, Mqtt);
 
 class Mqtt {
   MqttClient client;
+
   bool connected() =>
       client.connectionStatus.state == MqttConnectionState.connected;
   bool connecting() =>
       client.connectionStatus.state == MqttConnectionState.connecting;
-  final FindIOCallback onFindIO;
 
   final customSubscriptions = Map<String, List<IOListenSubscribe>>();
   final ServerInfo info;
+
+  // Events
   final MqttErrorCallback onError;
+  final FindIOCallback onFindIO;
 
   Mqtt(this.info, {this.onError, this.onFindIO}) {
     this.client = MqttClient.withPort(
@@ -38,19 +41,6 @@ class Mqtt {
     };
   }
 
-  Future<bool> connect() async {
-    try {
-      return await client.connect(info.username, info.password).then((status) {
-        return connected();
-      });
-    } catch (e) {
-      if (onError != null) onError(e.toString(), this);
-      return false;
-    }
-  }
-
-  Future<bool> verifyConnection() async => connected() || await connect();
-
   void _handleMessage(String topic, String payload) {
     final topicParts = topic.split("/");
     if (onFindIO != null &&
@@ -69,6 +59,22 @@ class Mqtt {
     }
   }
 
+  // Verify Connection
+  Future<bool> verifyConnection() async => connected() || await connect();
+
+  // connect
+  Future<bool> connect() async {
+    try {
+      return await client.connect(info.username, info.password).then((status) {
+        return connected();
+      });
+    } catch (e) {
+      if (onError != null) onError(e.toString(), this);
+      return false;
+    }
+  }
+
+  // Subscribe to topic
   void subscribe(String inTopic, IOListenSubscribe func) {
     if (!customSubscriptions.containsKey(inTopic)) {
       client.subscribe(inTopic, MqttQos.atLeastOnce);
@@ -79,6 +85,7 @@ class Mqtt {
     }
   }
 
+  // Publish message
   void publish(String topic, String payload) async {
     if (await verifyConnection()) {
       final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
@@ -87,8 +94,26 @@ class Mqtt {
     }
   }
 
+  // Find IOs
   void findIO() => publish("cmd/*/io", "get");
+  // Disconnect client
   void disconnect() {
     if (client != null && connected()) client.disconnect();
+  }
+
+  // Get Status message
+  String statusMessage() {
+    switch (client.connectionStatus.state) {
+      case MqttConnectionState.connected:
+        return "Connected";
+      case MqttConnectionState.connecting:
+        return "Connecting...";
+      case MqttConnectionState.disconnecting:
+        return "Disconnecting...";
+      case MqttConnectionState.faulted:
+        return "Error in connection";
+      default:
+        return "Not connected";
+    }
   }
 }

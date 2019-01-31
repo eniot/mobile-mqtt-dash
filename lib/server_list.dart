@@ -1,28 +1,41 @@
+import 'package:eniot_dash/dialogs.dart';
 import 'package:eniot_dash/src/server.dart';
 import 'package:flutter/material.dart';
 
+typedef ServerListRemoveCallback = void Function(String);
 typedef ServerListAddCallback = void Function();
+typedef ServerListSelectCallback = void Function(String);
 
 class ServerList extends StatefulWidget {
-  final Servers servers;
+  final Map<String, ServerInfo> servers;
+  final String selected;
+  final ServerListRemoveCallback onRemove;
   final ServerListAddCallback onAdd;
+  final ServerListSelectCallback onSelect;
 
-  const ServerList({Key key, this.servers, this.onAdd}) : super(key: key);
+  const ServerList(this.servers, this.selected,
+      {Key key, this.onRemove, this.onAdd, this.onSelect})
+      : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _ServerListState(servers, onAdd);
+  _ServerListState createState() => new _ServerListState(servers, selected, onRemove, onAdd, onSelect);
 }
 
 class _ServerListState extends State<ServerList> {
-  final Servers servers;
+  final Map<String, ServerInfo> servers;
+  String selected;
+  final ServerListRemoveCallback onRemove;
   final ServerListAddCallback onAdd;
+  final ServerListSelectCallback onSelect;
 
-  _ServerListState(this.servers, this.onAdd);
+  _ServerListState(
+      this.servers, this.selected, this.onRemove, this.onAdd, this.onSelect);
+
   @override
   Widget build(BuildContext context) {
-    final List<Widget> widgets = servers.servers
+    final List<Widget> widgets = servers
         .map((name, info) {
-          var icon = servers.selected == name
+          var icon = selected == name
               ? new Icon(Icons.cloud_done, color: Colors.blue)
               : new Icon(Icons.cloud);
           return MapEntry(
@@ -33,37 +46,18 @@ class _ServerListState extends State<ServerList> {
               subtitle: new Text(info.server),
               onTap: () {
                 setState(() {
-                  servers.select(name);
+                  selected = name;
                 });
-                Navigator.of(context).pop();
+                onSelect(name);
               },
               onLongPress: () {
-                showDialog(
-                  context: context,
-                  builder: (alertContext) => AlertDialog(
-                        title: new Text("Removing " + name),
-                        content: new Text("Are you sure?"),
-                        actions: <Widget>[
-                          new FlatButton(
-                            textColor: Colors.grey,
-                            child: new Text("Yes"),
-                            onPressed: () {
-                              Navigator.of(alertContext).pop();
-                              setState(() {
-                                servers.delete(name);
-                                servers.save();
-                              });
-                            },
-                          ),
-                          new FlatButton(
-                            child: new Text("No"),
-                            onPressed: () {
-                              Navigator.of(alertContext).pop();
-                            },
-                          ),
-                        ],
-                      ),
-                );
+                if (name == selected) return;
+                confirmDialog(context, "Removing " + name, onConfirm: () {
+                  setState(() {
+                    servers.remove(name);
+                  });
+                  onRemove(name);
+                });
               },
             ),
           );
@@ -75,13 +69,9 @@ class _ServerListState extends State<ServerList> {
       title: Text("add MQTT server"),
       leading: Icon(Icons.add_to_queue),
       onTap: () {
-        Navigator.of(context).pop();
         onAdd();
       },
     ));
-
-    return new Wrap(
-      children: widgets,
-    );
+    return new Wrap(children: widgets);
   }
 }
