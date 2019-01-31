@@ -1,4 +1,4 @@
-package com.example.mobilemqttdash;
+package com.enbiso.eniotdash;
 
 import android.os.Bundle;
 import io.flutter.app.FlutterActivity;
